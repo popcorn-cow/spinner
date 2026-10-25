@@ -28,7 +28,7 @@ CC_LINUX       ?= gcc-
 LINUX_CFLAGS   ?= $(CFLAGS)
 LINUX_CPPFLAGS ?= $(shell pkg-config --cflags raylib 2>/dev/null)
 LINUX_LDFLAGS  ?= $(shell pkg-config --libs-only-L raylib 2>/dev/null)
-LINUX_LIBS     ?= $(shell pkg-config --libs raylib 2>/dev/null) -lm -lpthread -ldl -lrt -lX11
+LINUX_LIBS     ?= $(shell pkg-config --libs raylib 2>/dev/null) -lm -lpthread -lrt -lX11
 
 CC_MACOS       ?= clang
 MACOS_CFLAGS   ?= $(CFLAGS)
@@ -66,23 +66,29 @@ build:
 	$(MAKE) --no-print-directory $(TARGET) CC="$(CC)" CPPFLAGS="$(CPPFLAGS)" CFLAGS="$(CFLAGS)" LDFLAGS="$(LDFLAGS)" LDLIBS="$(LDLIBS)"
 
 $(BUILD_DIR)/$(APP).exe: icon.o $(SOURCES) $(HEADERS)
+	mkdir -p bin/
 	windres icon.rc -O coff -o icon.o
-	$(CC) $(CPPFLAGS) $(CFLAGS) $(SOURCES) -o "$@" $(LDFLAGS) $(LDLIBS)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(SOURCES) icon.o -o "$@" $(LDFLAGS) $(LDLIBS)
 
 $(BUILD_DIR)/$(APP)-release.exe: $(SOURCES) $(HEADERS)
+	mkdir -p bin/
 	windres icon.rc -O coff -o icon.o
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(SOURCES) icon.o -o "$@" $(LDFLAGS) $(LDLIBS)
 
 $(BUILD_DIR)/$(APP)-loonix.exe: $(SOURCES) $(HEADERS)
-	$(CC) $(CPPFLAGS) $(CFLAGS) $(SOURCES) icon.o -o "$@" $(LDFLAGS) $(LDLIBS)
+	mkdir -p bin/
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(SOURCES) -o "$@" $(LDFLAGS) $(LDLIBS)
 
 $(BUILD_DIR)/$(APP)-loonix-release.exe: $(SOURCES) $(HEADERS)
+	mkdir -p bin/
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(SOURCES) -o "$@" $(LDFLAGS) $(LDLIBS)
 
 $(BUILD_DIR)/$(APP)-macos: $(SOURCES) $(HEADERS)
+	mkdir -p bin/
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(SOURCES) -o "$@" $(LDFLAGS) $(LDLIBS)
 
 $(BUILD_DIR)/$(APP)-macos-release: $(SOURCES) $(HEADERS)
+	mkdir -p bin/
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(SOURCES) -o "$@" $(LDFLAGS) $(LDLIBS)
 
 clean:

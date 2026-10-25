@@ -17,7 +17,6 @@
 #define RAYGUI_IMPLEMENTATION
 #include "raygui.h"
 
-
 int main(void)
 {
     const int width = 800;
@@ -31,8 +30,6 @@ int main(void)
     Texture2D hyperborea = LoadTexture("../res/hyperborea.png");
     Music song = LoadMusicStream("../res/h4rdjump1988.mp3");
     Font tannenberg = LoadFont("../res/Tannenbergfett.ttf");
-    // Font tannenberg = LoadFont("../res/Tannenbergfett.otf");
-    
     
     GuiLoadStyleDefault();
     GuiSetFont(tannenberg);
@@ -59,7 +56,7 @@ int main(void)
     while (!WindowShouldClose())    // Detect window close button or ESC key
     {
         // keybinds
-        SetExitKey(KEY_ESCAPE | KEY_Q);
+        SetExitKey(KEY_ESCAPE);
         if(IsKeyDown(KEY_M)) {
             if (IsMusicStreamPlaying(song)) {
                 PauseMusicStream(song);
@@ -68,6 +65,9 @@ int main(void)
             else {
                 ResumeMusicStream(song);
             }
+        }
+        if (IsKeyDown(KEY_S) || IsKeyDown(KEY_PRINT_SCREEN)) {
+            TakeScreenshot("../screen.png");
         }
 
         // Update loop
