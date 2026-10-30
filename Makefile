@@ -1,9 +1,9 @@
 # Build configuration. Override any of these with e.g. `make linux CC_LINUX=clang`.
-APP          ?= aryan
+APP          ?= spinner
 BUILD_DIR    ?= bin
 SOURCES      ?= $(wildcard src/*.c)
 HEADERS      ?= $(wildcard inc/*.h)
-CFLAGS       ?= -std=c23 -Wall -Wextra
+CFLAGS       ?= -std=c99 -Wall -Wextra
 RELEASE      ?= 0
 
 ifeq ($(RELEASE),1)
@@ -21,20 +21,20 @@ WINDOWS_CFLAGS  ?= $(CFLAGS)
 WINDOWS_CPPFLAGS?= -I$(RAYLIB_WINDOWS) -I./inc
 WINDOWS_LDFLAGS ?= -L$(RAYLIB_WINDOWS) -L./lib
 WINDOWS_RELEASE_LDFLAGS ?= -Wl,--subsystem,windows
-WINDOWS_LIBS    ?= -lraylib -lopengl32 -lgdi32 -lwinmm -lshcore
+WINDOWS_LIBS    ?= -lraylib -lopengl32 -lgdi32 -lwinmm -lshcore -llua55
 
 # Linux and macOS use a Raylib installation discoverable through pkg-config.
-CC_LINUX       ?= gcc-
+CC_LINUX       ?= gcc
 LINUX_CFLAGS   ?= $(CFLAGS)
-LINUX_CPPFLAGS ?= $(shell pkg-config --cflags raylib 2>/dev/null)
-LINUX_LDFLAGS  ?= $(shell pkg-config --libs-only-L raylib 2>/dev/null)
-LINUX_LIBS     ?= $(shell pkg-config --libs raylib 2>/dev/null) -lm -lpthread -lrt -lX11
+LINUX_CPPFLAGS ?= $(shell pkg-config --cflags raylib 2>/dev/null) -I./inc
+LINUX_LDFLAGS  ?= $(shell pkg-config --libs-only-L raylib 2>/dev/null) -L./lib
+LINUX_LIBS     ?= $(shell pkg-config --libs raylib 2>/dev/null) -lm -lpthread -lrt -lX11 -llua55
 
 CC_MACOS       ?= clang
 MACOS_CFLAGS   ?= $(CFLAGS)
-MACOS_CPPFLAGS ?= $(shell pkg-config --cflags raylib 2>/dev/null)
-MACOS_LDFLAGS  ?= $(shell pkg-config --libs-only-L raylib 2>/dev/null)
-MACOS_LIBS     ?= $(shell pkg-config --libs raylib 2>/dev/null) -framework Cocoa -framework OpenGL -framework IOKit -framework CoreVideo
+MACOS_CPPFLAGS ?= $(shell pkg-config --cflags raylib 2>/dev/null) -I./inc
+MACOS_LDFLAGS  ?= $(shell pkg-config --libs-only-L raylib 2>/dev/null) -L./lib
+MACOS_LIBS     ?= $(shell pkg-config --libs raylib 2>/dev/null) -framework Cocoa -framework OpenGL -framework IOKit -framework CoreVideo -llua55
 
 ifeq ($(OS),Windows_NT)
 DEFAULT_PLATFORM := windows
@@ -44,7 +44,7 @@ else
 DEFAULT_PLATFORM := linux
 endif
 
-.PHONY: all debug win windows tux linux loonix mac macos clean
+.PHONY: all debug win windows tux linux loonix mac macos clean run install uninstall
 
 # `make` builds for the operating system running make.
 all: $(DEFAULT_PLATFORM)
@@ -66,12 +66,12 @@ build:
 	$(MAKE) --no-print-directory $(TARGET) CC="$(CC)" CPPFLAGS="$(CPPFLAGS)" CFLAGS="$(CFLAGS)" LDFLAGS="$(LDFLAGS)" LDLIBS="$(LDLIBS)"
 
 $(BUILD_DIR)/$(APP).exe: icon.o $(SOURCES) $(HEADERS)
-	mkdir -p bin/
+# 	mkdir bin/
 	windres icon.rc -O coff -o icon.o
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(SOURCES) icon.o -o "$@" $(LDFLAGS) $(LDLIBS)
 
 $(BUILD_DIR)/$(APP)-release.exe: $(SOURCES) $(HEADERS)
-	mkdir -p bin/
+# 	mkdir bin/
 	windres icon.rc -O coff -o icon.o
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(SOURCES) icon.o -o "$@" $(LDFLAGS) $(LDLIBS)
 
@@ -92,4 +92,24 @@ $(BUILD_DIR)/$(APP)-macos-release: $(SOURCES) $(HEADERS)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(SOURCES) -o "$@" $(LDFLAGS) $(LDLIBS)
 
 clean:
-	rm -f $(BUILD_DIR)/*
+	ifeq ($(OS),Windows_NT)
+		del /f $(BUILD_DIR)\*
+	else
+		rm -f $(BUILD_DIR)/*
+	endif
+run:
+	$(BUILD_DIR)/$(APP)*$(MODE_SUFFIX).*
+	
+install:
+	ifeq ($(OS), Windows_NT)
+		echo "this operation is not supported on windows"
+	else
+		mv $(BUILD_DIR)/$(APP) /usr/bin/$(APP)
+	endif
+
+uninstall:
+	ifeq ($(OS), Windows_NT)
+		echo "this operation is not supported on windows"
+	else
+		rm -f /usr/bin/$(APP)
+	endif

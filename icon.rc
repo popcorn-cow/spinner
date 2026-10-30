@@ -1,4 +1,4 @@
-id ICON "raygui.ico"
+id ICON "icon.ico"
 
 1 VERSIONINFO
 FILEVERSION     5,0,0,0
@@ -6,22 +6,16 @@ PRODUCTVERSION  5,0,0,0
 BEGIN
   BLOCK "StringFileInfo"
   BEGIN
-    //BLOCK "080904E4"     // English UK
     BLOCK "040904E4"    // English US
     BEGIN
-      //VALUE "CompanyName", "raylib technologies"
-      VALUE "FileDescription", "raygui application (www.raylib.com)"
+      VALUE "FileDescription", "Spin your favorite political logos"
       VALUE "FileVersion", "5.0.0"
-      VALUE "InternalName", "raygui app"
-      VALUE "LegalCopyright", "(c) 2026 Ramon Santamaria (@raysan5)"
-      //VALUE "OriginalFilename", "raygui_app.exe"
-      VALUE "ProductName", "raygui app"
+      VALUE "LegalCopyright", "(c) 2026 popcorn-cow"
       VALUE "ProductVersion", "5.0.0"
     END
   END
   BLOCK "VarFileInfo"
   BEGIN
-    //VALUE "Translation", 0x809, 1252    // English UK
     VALUE "Translation", 0x409, 1252    // English US
   END
 END
