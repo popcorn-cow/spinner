@@ -165,7 +165,7 @@ int main(void)
             }
             else if (showHelpMenu)
             {
-                GuiMessageBox((Rectangle){width / 2 - 250, height /2 - 100, 500, 200}, "About", "A utility to display your favorite logo and spin it around.", "Ok", 0);
+                GuiMessageBox((Rectangle){width / 2 - 250, height /2 - 100, 500, 200}, "About", "A utility to display your favorite logo and spin it around.\n1. F1 - Show a help menu\n2. S - Take a screenshot\n3. R - Record a video\n4. ESCAPE - Open an options menu\n5. SPACE - Pause music", "Ok", 0);
             }
         EndDrawing();
     }
