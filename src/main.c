@@ -29,7 +29,6 @@
 #include "config.h"
 
 
-
 int main(void)
 {
     const int width = 800;
@@ -42,6 +41,15 @@ int main(void)
     InitAudioDevice();
     lua_State *L = luaL_newstate();
     luaL_openlibs(L);
+    // if (luaL_dofile(L, "./../etc/config.lua") == LUA_OK) {
+    //     lua_getglobal(L, "logoPath");
+    //     lua_ logoPathLua[256] = lua_tostring(L, -1);
+    //     printf("recieved: %s", logoPathLua);
+    //     printf("[C] Executed string s\n");
+    // } else {
+    //     printf("[C] Error reading script\n");
+    //     luaL_error(L, "Error: %s\n", lua_tostring(L, -1));
+    // }
     if (luaL_loadfile(L, "./../etc/config.lua") || lua_pcall(L, 0, 0, 0)) {
         printf("Errors were found:\n%s\n", lua_tostring(L, -1));
     }
@@ -68,6 +76,8 @@ int main(void)
     // Origin of the texture (rot/scale point) it is relative to dest rec size
     Vector2 origin = { (float)frameWidth, (float)frameHeight };
     Vector2 textOrigin = {-800, 400};
+
+    RenderTexture2D screen;
     
     float textSpeed = 50.0f;
     int rotation = 0;
@@ -76,8 +86,12 @@ int main(void)
     bool showOptionsMenu = false;
     bool *loopMusic = &song.looping;
     bool recording = false;
+    bool showEditTextMenu = false;
+    bool showEditLogoPathMenu = false;
+    bool showEditBackgroundPathMenu = false;
+    bool showEditSongPathMenu = false;
+    bool showEditFontPathMenu = false;
     int activeButton = 1;
-    int* currentActiveButton = &activeButton;
     FFMPEG *ffmpeg;
     
     SetTargetFPS(60);
@@ -119,12 +133,18 @@ int main(void)
         }
         if (!recording && IsKeyPressed(KEY_R))
         {
-            ffmpeg = ffmpeg_start_rendering("../tmp/screen.mp4", 800, 450, 60, "../tmp/screen.mp3");
+            recording = true;
+            Image screenImage = LoadImageFromScreen();
+            ffmpeg = ffmpeg_start_rendering("../tmp/screen.mp4", width, height, 60, songPath);
+            ffmpeg_send_frame_flipped(ffmpeg, screenImage.data, screenImage.width, screenImage.height);
         }
         else if (recording && IsKeyPressed(KEY_R))
-        {
-            ffmpeg_end_rendering(ffmpeg, 1);
+        {   
+            recording = false;
+            ffmpeg_end_rendering(ffmpeg, recording);
+            ffmpeg = 0;
         }
+
         // Update loop
         rotation++;
         UpdateMusicStream(song);
@@ -134,7 +154,6 @@ int main(void)
       
         // drawing stuff to the screen
         BeginDrawing();
-
             ClearBackground(RAYWHITE);
             DrawTexture(background, 0, 0, WHITE);
             DrawTexturePro(logo, sourceRec, destRec, origin, (float)rotation, WHITE);
@@ -143,23 +162,38 @@ int main(void)
             {
                 DrawRectangle(600, 0, 400, height, RAYWHITE);
                 GuiLabel((Rectangle){650, 5, 100, 20}, "Logo");
-                if (GuiButton((Rectangle){650, 30, 100, 20}, "open file"))
+                GuiToggle((Rectangle){650, 30, 100, 20}, "open file", &showEditLogoPathMenu);
+                if (showEditLogoPathMenu)
                 {
                     // logo = LoadTexture("../res/hyperborea.png");
-                    GuiTextInputBox((Rectangle){width / 2 - 250, height /2 - 100, 500, 200}, "Change Logo Texture", "change the logo texture on the screen", logoPath, fontSize, "Set\nCancel", currentActiveButton, 0);
+                    GuiTextInputBox((Rectangle){width / 2 - 250, height /2 - 100, 500, 200}, "Change Logo Texture", "change the logo texture on the screen", logoPath, fontSize, "Set\nCancel", &activeButton, 0);
                     
                 }
                 GuiLabel((Rectangle){650, 55, 100, 20}, "Background");
-                GuiButton((Rectangle){650, 80, 100, 20}, "open file");
+                GuiToggle((Rectangle){650, 80, 100, 20}, "open file", &showEditBackgroundPathMenu);
+                if (showEditBackgroundPathMenu)
+                {
+                    GuiTextInputBox((Rectangle){width / 2 - 250, height /2 - 100, 500, 200}, "Change Background Texture", "change the background texture on the screen", backgroundPath, fontSize, "Set\nCancel", &activeButton, 0);
+                }
                 GuiLabel((Rectangle){650, 105, 60, 20}, "Music");
-                GuiButton((Rectangle){650, 130, 100, 20}, "open file");
+                GuiToggle((Rectangle){650, 130, 100, 20}, "open file", &showEditSongPathMenu);
+                if (showEditSongPathMenu)
+                {
+                    GuiTextInputBox((Rectangle){width / 2 - 250, height /2 - 100, 500, 200}, "Change song", "change the music currently played", songPath, fontSize, "Set\nCancel", &activeButton, 0);
+                }
                 GuiToggle((Rectangle){650, 155, 100, 20}, "Loop music", loopMusic);
                 GuiLabel((Rectangle){650, 180, 60, 20}, "font");
-                GuiButton((Rectangle){650, 205, 100, 20}, "open file");
-                if (GuiButton((Rectangle){650, 230, 100, 20}, "Change Text"))
+                GuiToggle((Rectangle){650, 205, 100, 20}, "open file", &showEditFontPathMenu);
+                if (showEditFontPathMenu)
+                {
+                    GuiTextInputBox((Rectangle){width / 2 - 250, height /2 - 100, 500, 200}, "Change font", "change the font currently displayed", fontPath, fontSize, "Set\nCancel", &activeButton, 0);
+                    
+                }
+                GuiToggle((Rectangle){650, 230, 100, 20}, "Change Text", &showEditTextMenu);
+                if (showEditTextMenu)
                 {
                     // GuiMessageBox((Rectangle){width / 2 - 250, height /2 - 100, 500, 200}, "Message Box", "This is a GuiMessageBox!", "Set\nCancel", currentActiveButton);
-                    GuiTextInputBox((Rectangle){width / 2 - 250, height /2 - 100, 500, 200}, "Change text", "change the scrolling text on the screen", text, fontSize, "Set\nCancel", currentActiveButton, 0);
+                    GuiTextInputBox((Rectangle){width / 2 - 250, height /2 - 100, 500, 200}, "Change text", "change the scrolling text on the screen", text, fontSize, "Set\nCancel", &activeButton, 0);
                 }
                 GuiSpinner((Rectangle){650, 255, 100, 20}, "Font size", &fontSize, 0, 100, true);
             }

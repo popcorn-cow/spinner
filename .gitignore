@@ -1,6 +1,7 @@
 .vscode
 bin/
 icon.o
-*/screen.png
+# */screen.png
 notes.txt
 src/config.h
+tmp/
