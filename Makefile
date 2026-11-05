@@ -1,6 +1,7 @@
 # Build configuration. Override any of these with e.g. `make linux CC_LINUX=clang`.
 APP          ?= spinner
 BUILD_DIR    ?= bin
+SOURCES_THIRDPARTY ?= $(wildcard src/thirdparty/*/*.c)
 SOURCES      ?= $(wildcard src/*.c)
 HEADERS      ?= $(wildcard inc/*.h)
 CFLAGS       ?= -std=c99 -Wall -Wextra
@@ -10,7 +11,7 @@ ifeq ($(RELEASE),1)
 MODE_CFLAGS  ?= -O2
 MODE_SUFFIX  := -release
 else
-MODE_CFLAGS  ?= -g -O0
+MODE_CFLAGS  ?= -g -O0 -ggdb
 MODE_SUFFIX  :=
 endif
 
@@ -19,21 +20,21 @@ CC_WINDOWS      ?= C:/raylib/w64devkit/bin/gcc.exe # change these if you have th
 RAYLIB_WINDOWS  ?= C:/raylib/raylib/src
 WINDOWS_CFLAGS  ?= $(CFLAGS)
 WINDOWS_CPPFLAGS?= -I$(RAYLIB_WINDOWS) -I./inc
-WINDOWS_LDFLAGS ?= -L$(RAYLIB_WINDOWS) -L./lib
+WINDOWS_LDFLAGS ?= -L$(RAYLIB_WINDOWS) -L./lib/mingw
 WINDOWS_RELEASE_LDFLAGS ?= -Wl,--subsystem,windows
-WINDOWS_LIBS    ?= -lraylib -lopengl32 -lgdi32 -lwinmm -lshcore -llua55
+WINDOWS_LIBS    ?= -lraylib -lopengl32 -ldwmapi -lcomdlg32 -lole32 -lgdi32 -lwinmm -lshcore #-llua55 
 
 # Linux and macOS use a Raylib installation discoverable through pkg-config.
 CC_LINUX       ?= gcc
 LINUX_CFLAGS   ?= $(CFLAGS)
 LINUX_CPPFLAGS ?= $(shell pkg-config --cflags raylib 2>/dev/null) -I./inc
-LINUX_LDFLAGS  ?= $(shell pkg-config --libs-only-L raylib 2>/dev/null) -L./lib
+LINUX_LDFLAGS  ?= $(shell pkg-config --libs-only-L raylib 2>/dev/null) -L./lib/gnu
 LINUX_LIBS     ?= $(shell pkg-config --libs raylib 2>/dev/null) -lm -lpthread -lrt -lX11 -llua55
 
 CC_MACOS       ?= clang
 MACOS_CFLAGS   ?= $(CFLAGS)
 MACOS_CPPFLAGS ?= $(shell pkg-config --cflags raylib 2>/dev/null) -I./inc
-MACOS_LDFLAGS  ?= $(shell pkg-config --libs-only-L raylib 2>/dev/null) -L./lib
+MACOS_LDFLAGS  ?= $(shell pkg-config --libs-only-L raylib 2>/dev/null) -L./lib/mac
 MACOS_LIBS     ?= $(shell pkg-config --libs raylib 2>/dev/null) -framework Cocoa -framework OpenGL -framework IOKit -framework CoreVideo -llua55
 
 ifeq ($(OS),Windows_NT)
@@ -65,31 +66,31 @@ mac macos:
 build:
 	$(MAKE) --no-print-directory $(TARGET) CC="$(CC)" CPPFLAGS="$(CPPFLAGS)" CFLAGS="$(CFLAGS)" LDFLAGS="$(LDFLAGS)" LDLIBS="$(LDLIBS)"
 
-$(BUILD_DIR)/$(APP).exe: icon.o $(SOURCES) $(HEADERS)
+$(BUILD_DIR)/$(APP).exe: icon.o $(SOURCES) $(SOURCES_THIRDPARTY) $(HEADERS)
 # 	mkdir bin/
 	windres icon.rc -O coff -o icon.o
-	$(CC) $(CPPFLAGS) $(CFLAGS) $(SOURCES) icon.o -o "$@" $(LDFLAGS) $(LDLIBS)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(SOURCES) $(SOURCES_THIRDPARTY) icon.o -o "$@" $(LDFLAGS) $(LDLIBS)
 
-$(BUILD_DIR)/$(APP)-release.exe: $(SOURCES) $(HEADERS)
+$(BUILD_DIR)/$(APP)-release.exe: $(SOURCES) $(SOURCES_THIRDPARTY) $(HEADERS)
 # 	mkdir bin/
 	windres icon.rc -O coff -o icon.o
-	$(CC) $(CPPFLAGS) $(CFLAGS) $(SOURCES) icon.o -o "$@" $(LDFLAGS) $(LDLIBS)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(SOURCES) $(SOURCES_THIRDPARTY) icon.o -o "$@" $(LDFLAGS) $(LDLIBS)
 
-$(BUILD_DIR)/$(APP)-loonix.exe: $(SOURCES) $(HEADERS)
+$(BUILD_DIR)/$(APP)-loonix.exe: $(SOURCES) $(SOURCES_THIRDPARTY) $(HEADERS)
 	mkdir -p bin/
-	$(CC) $(CPPFLAGS) $(CFLAGS) $(SOURCES) -o "$@" $(LDFLAGS) $(LDLIBS)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(SOURCES) $(SOURCES_THIRDPARTY) -o "$@" $(LDFLAGS) $(LDLIBS)
 
-$(BUILD_DIR)/$(APP)-loonix-release.exe: $(SOURCES) $(HEADERS)
+$(BUILD_DIR)/$(APP)-loonix-release.exe: $(SOURCES) $(HEADERS) $(SOURCES_THIRDPARTY)
 	mkdir -p bin/
-	$(CC) $(CPPFLAGS) $(CFLAGS) $(SOURCES) -o "$@" $(LDFLAGS) $(LDLIBS)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(SOURCES) $(SOURCES_THIRDPARTY) -o "$@" $(LDFLAGS) $(LDLIBS)
 
-$(BUILD_DIR)/$(APP)-macos: $(SOURCES) $(HEADERS)
+$(BUILD_DIR)/$(APP)-macos: $(SOURCES) $(HEADERS) $(SOURCES_THIRDPARTY)
 	mkdir -p bin/
-	$(CC) $(CPPFLAGS) $(CFLAGS) $(SOURCES) -o "$@" $(LDFLAGS) $(LDLIBS)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(SOURCES) $(SOURCES_THIRDPARTY) -o "$@" $(LDFLAGS) $(LDLIBS)
 
-$(BUILD_DIR)/$(APP)-macos-release: $(SOURCES) $(HEADERS)
+$(BUILD_DIR)/$(APP)-macos-release: $(SOURCES) $(SOURCES_THIRDPARTY) $(HEADERS)
 	mkdir -p bin/
-	$(CC) $(CPPFLAGS) $(CFLAGS) $(SOURCES) -o "$@" $(LDFLAGS) $(LDLIBS)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(SOURCES) $(SOURCES_THIRDPARTY) -o "$@" $(LDFLAGS) $(LDLIBS)
 
 clean:
 	ifeq ($(OS),Windows_NT)

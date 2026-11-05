@@ -62,10 +62,9 @@ FFMPEG *ffmpeg_start_rendering(const char *output_path, size_t width, size_t hei
     PROCESS_INFORMATION piProcInfo;
     ZeroMemory(&piProcInfo, sizeof(PROCESS_INFORMATION));
 
-    // TODO: use String_Builder in here
-    // TODO: sanitize user input through sound_file_path
+    // TODO: use String_Builder infhrough sound_file_path
     char cmd_buffer[1024*2];
-    snprintf(cmd_buffer, sizeof(cmd_buffer), "ffmpeg.exe -loglevel verbose -y -f rawvideo -pix_fmt rgba -s %dx%d -r %d -i - -i \"%s\" -c:v libx264 -vb 2500k -c:a aac -ab 200k -pix_fmt yuv420p %s", (int)width, (int)height, (int)fps, sound_file_path, output_path);
+    snprintf(cmd_buffer, sizeof(cmd_buffer), "ffmpeg.exe -hide_banner -loglevel verbose -y -f rawvideo -pix_fmt rgba -s %dx%d -r %d -i - -i \"%s\" -c:v libx264 -vb 2500k -c:a aac -ab 200k -pix_fmt yuv420p \"%s\"", (int)width, (int)height, (int)fps, sound_file_path, output_path);
 
     if (!CreateProcess(NULL, cmd_buffer, NULL, NULL, TRUE, 0, NULL, NULL, &siStartInfo, &piProcInfo)) {
         TraceLog(LOG_ERROR, "FFMPEG: Could not create child process. System Error Code: %d", GetLastError());

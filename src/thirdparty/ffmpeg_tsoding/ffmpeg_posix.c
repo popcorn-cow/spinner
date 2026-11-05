@@ -1,4 +1,4 @@
-#if defined(__linux__)
+#if defined(__linux__) || defined(__MACH__) || defined (__APPLE__)
 #include <assert.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -52,6 +52,7 @@ FFMPEG *ffmpeg_start_rendering(const char *output_path, size_t width, size_t hei
 
         int ret = execlp("ffmpeg",
             "ffmpeg",
+            "-hide_banner"
             "-loglevel", "verbose",
             "-y",
 
