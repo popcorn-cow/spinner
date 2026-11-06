@@ -31,7 +31,8 @@
 #include "tinyfiledialogs.h"
 
 
-char const *lFilterPatterns[6] = {"*.png", "*.mp3", "*.wav", "*.ogg", "*.flac", "*.webp" };
+// char const *lFilterPatterns[6] = { "*.png", "*.mp3", "*.wav", "*.ogg", "*.flac", "*.webp" };
+
 const int width = 800;
 const int height = 450;
 
@@ -94,7 +95,6 @@ int main(void)
 
     bool showHelpMenu = false;
     bool showOptionsMenu = false;
-    // bool *loopMusic = &song.looping;
     bool recording = false;
     bool showEditTextMenu = false;
     bool showEditLogoPathMenu = false;
@@ -147,7 +147,8 @@ int main(void)
         {
             GuiDisable();
             recording = true;
-            char *saveVideoFilePath = tinyfd_saveFileDialog("save recorded video", "../res/", 1, lFilterPatterns, "video");
+            char const *lFilterPatterns[] = {"*.mp4", "*.webm", "*.mkv", "*.mov"}; 
+            char *saveVideoFilePath = tinyfd_saveFileDialog("save recorded video", "../res/", 4, lFilterPatterns, 0);
             if (saveVideoFilePath == NULL) {
                 tinyfd_messageBox("Notice", "Filename is not specified, saving in default location \x28./../tmp/screen.mp4\x29", "ok", "info", 1);
                 ffmpeg = ffmpeg_start_rendering("./../tmp/screen.mp4", width, height, 60, songPath);
@@ -197,7 +198,8 @@ int main(void)
                 GuiToggle((Rectangle){650, 30, 100, 20}, "open file", &showEditLogoPathMenu);
                 if (showEditLogoPathMenu)
                 {
-                    char *logoFilePathBuffer = tinyfd_openFileDialog("Choose a logo to spin", "../res/", 1, lFilterPatterns, "pictures", 0);
+                    char const *lFilterPatterns[] = {"*.webp", "*.jpg", "*.png", "*.avif", "*.jxl", "*.gif", "*.jpeg"}; 
+                    char *logoFilePathBuffer = tinyfd_openFileDialog("Choose a logo to spin", "../res/", 7, lFilterPatterns, 0, 0);
                     // GuiTextInputBox((Rectangle){width / 2 - 250, height /2 - 100, 500, 200}, "Change Logo Texture", "change the logo texture on the screen", userInputBuffer, fontSize, "Set\nCancel", &activeButton, 0);
                     if (logoFilePathBuffer == NULL)
                     {
@@ -218,8 +220,8 @@ int main(void)
                 GuiToggle((Rectangle){650, 80, 100, 20}, "open file", &showEditBackgroundPathMenu);
                 if (showEditBackgroundPathMenu)
                 {
-                    
-                    char *backgroundFilePathBuffer = tinyfd_openFileDialog("Choose a background", "../res/", 1, lFilterPatterns, "pictures", 0);
+                    char const *lFilterPatterns[] = {"*.webp", "*.jpg", "*.png", "*.avif", "*.jxl", "*.gif", "*.jpeg"}; 
+                    char *backgroundFilePathBuffer = tinyfd_openFileDialog("Choose a background", "../res/", 7, lFilterPatterns, 0, 0);
                     if (backgroundFilePathBuffer == NULL)
                     {
                         TraceLog(LOG_ERROR, "You must select a file.");
@@ -239,7 +241,8 @@ int main(void)
                 GuiToggle((Rectangle){650, 130, 100, 20}, "open file", &showEditSongPathMenu);
                 if (showEditSongPathMenu)
                 {
-                    char *songFilePathBuffer = tinyfd_openFileDialog("Choose a song to play", "../res/", 1, lFilterPatterns, "songs", 0);
+                    char const *lFilterPatterns[] = {"*.wav", "*.ogg", "*.mp3", "*.qoa", "*.xm", "*.mod", "*.flac"}; 
+                    char *songFilePathBuffer = tinyfd_openFileDialog("Choose a song to play", "../res/", 7, lFilterPatterns, 0, 0);
                     if (songFilePathBuffer == NULL)
                     {
                         TraceLog(LOG_ERROR, "You must select a file.");
@@ -290,8 +293,8 @@ int main(void)
 
     // deinit
     UnloadTexture(logo);        // Texture unloading
-    UnloadImage(screenImage);
     UnloadRenderTexture(screen);
+    UnloadImage(screenImage);
     UnloadTexture(background);
     UnloadMusicStream(song);
     CloseAudioDevice();
