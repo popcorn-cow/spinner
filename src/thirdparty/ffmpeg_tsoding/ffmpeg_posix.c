@@ -1,4 +1,6 @@
 #if defined(__linux__) || defined(__MACH__) || defined (__APPLE__)
+#define _GNU_SOURCE
+#define _POSIX_C_SOURCE
 #include <assert.h>
 #include <stdio.h>
 #include <stdint.h>

@@ -29,13 +29,13 @@ CC_LINUX       ?= gcc
 LINUX_CFLAGS   ?= $(CFLAGS)
 LINUX_CPPFLAGS ?= $(shell pkg-config --cflags raylib 2>/dev/null) -I./inc
 LINUX_LDFLAGS  ?= $(shell pkg-config --libs-only-L raylib 2>/dev/null) -L./lib/gnu
-LINUX_LIBS     ?= $(shell pkg-config --libs raylib 2>/dev/null) -lm -lpthread -lrt -lX11 -llua55
+LINUX_LIBS     ?= $(shell pkg-config --libs raylib 2>/dev/null) -l:libraylib.a -lm -lpthread -lrt -lX11 #-llua55
 
 CC_MACOS       ?= clang
 MACOS_CFLAGS   ?= $(CFLAGS)
 MACOS_CPPFLAGS ?= $(shell pkg-config --cflags raylib 2>/dev/null) -I./inc
 MACOS_LDFLAGS  ?= $(shell pkg-config --libs-only-L raylib 2>/dev/null) -L./lib/mac
-MACOS_LIBS     ?= $(shell pkg-config --libs raylib 2>/dev/null) -framework Cocoa -framework OpenGL -framework IOKit -framework CoreVideo -llua55
+MACOS_LIBS     ?= $(shell pkg-config --libs raylib 2>/dev/null) -framework Cocoa -framework OpenGL -framework IOKit -framework CoreVideo #-llua55
 
 ifeq ($(OS),Windows_NT)
 DEFAULT_PLATFORM := windows
