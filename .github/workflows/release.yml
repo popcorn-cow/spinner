@@ -1,0 +1,145 @@
+name: Build and publish release archives
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build ${{ matrix.platform }} archive
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux-x86_64
+            runner: ubuntu-24.04
+            archive: tar.gz
+          - platform: windows-x86_64
+            runner: windows-2025
+            archive: zip
+          - platform: macos-arm64
+            runner: macos-15
+            archive: tar.gz
+          - platform: macos-x86_64
+            runner: macos-15-intel
+            archive: tar.gz
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+
+      - name: Install Linux build dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes build-essential pkg-config libraylib-dev
+
+      - name: Install macOS build dependencies
+        if: runner.os == 'macOS'
+        run: brew install pkg-config raylib
+
+      - name: Install Windows build dependencies
+        if: runner.os == 'Windows'
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          install: >-
+            make
+            zip
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-pkgconf
+            mingw-w64-ucrt-x86_64-raylib
+
+      - name: Build Linux release
+        if: runner.os == 'Linux'
+        run: |
+          mkdir -p bin
+          make linux RELEASE=1 CFLAGS="-std=c99 -D_POSIX_C_SOURCE=200809L -Wall -Wextra"
+
+      - name: Build macOS release
+        if: runner.os == 'macOS'
+        run: |
+          mkdir -p bin
+          make macos RELEASE=1 CFLAGS="-std=c99 -D_POSIX_C_SOURCE=200809L -Wall -Wextra"
+
+      - name: Build Windows release
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        run: |
+          mkdir -p bin
+          make windows RELEASE=1 \
+            WINDOWS_CPPFLAGS="-I/ucrt64/include -I./inc" \
+            WINDOWS_LDFLAGS="-L/ucrt64/lib" \
+            WINDOWS_LIBS="$(pkg-config --libs raylib) -lopengl32 -ldwmapi -lcomdlg32 -lole32 -lgdi32 -lwinmm -lshcore"
+
+      - name: Assemble and archive Linux or macOS package
+        if: runner.os != 'Windows'
+        env:
+          VERSION: ${{ github.ref_name }}
+          PLATFORM: ${{ matrix.platform }}
+        run: |
+          set -euo pipefail
+          stage="dist/Spinner-${VERSION}-${PLATFORM}"
+          mkdir -p "$stage/bin"
+          if [ "$PLATFORM" = "linux-x86_64" ]; then
+            cp bin/spinner-loonix-release.exe "$stage/bin/spinner"
+          else
+            cp bin/spinner-macos-release "$stage/bin/spinner"
+          fi
+          cp -R res "$stage/res"
+          cp icon.png README.md LICENSE.md NOTICES.md "$stage/"
+          tar -czf "dist/Spinner-${VERSION}-${PLATFORM}.tar.gz" -C dist "Spinner-${VERSION}-${PLATFORM}"
+
+      - name: Assemble and archive Windows package
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        env:
+          VERSION: ${{ github.ref_name }}
+          PLATFORM: ${{ matrix.platform }}
+        run: |
+          set -euo pipefail
+          stage="dist/Spinner-${VERSION}-${PLATFORM}"
+          mkdir -p "$stage/bin"
+          cp bin/spinner-release.exe "$stage/bin/spinner.exe"
+          cp -R res "$stage/res"
+          cp icon.png README.md LICENSE.md NOTICES.md "$stage/"
+          while IFS= read -r dll; do
+            [ -f "$dll" ] && cp -n "$dll" "$stage/bin/"
+          done < <(ldd bin/spinner-release.exe | awk '/=> \/.*\.dll/ { print $3 }')
+          (cd dist && zip -qr "Spinner-${VERSION}-${PLATFORM}.zip" "Spinner-${VERSION}-${PLATFORM}")
+
+      - name: Upload archive
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-${{ matrix.platform }}
+          path: dist/Spinner-*.${{ matrix.archive }}
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    name: Publish GitHub Release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Download all release archives
+        uses: actions/download-artifact@v8
+        with:
+          pattern: release-*
+          path: dist
+          merge-multiple: true
+
+      - name: Create release and attach archives
+        uses: softprops/action-gh-release@v3
+        with:
+          files: dist/Spinner-*
+          generate_release_notes: true

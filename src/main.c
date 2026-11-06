@@ -65,9 +65,9 @@ int main(void)
     char iconPath[256] = "../icon.png";
     char backgroundPath[256] = "../res/soviet.png";
     char logoPath[256] = "../res/leftysoy-entrance-emblem.png"; // changed it because i don't want to get banned. i will probably still get banned cause it's le bad or something.
-    char songPath[256] = "../res/sidewalks_and_skeletons_crawlspace_witch_house_ncs.mp3";
+    char songPath[256] = "../res/Sidewalks_And_Skeletons_Crawlspace_Witch_House_ncs.mp3";
     // static char fontpath[] = "../res/tannenbergfett.ttf";
-    char fonts[3][256] = {"../res/dotgothic16-regular.ttf", "../res/anonymous_pro_bold.ttf", "../res/tannenbergfett.ttf"};
+    char fonts[3][256] = {"../res/DotGothic16-Regular.ttf", "../res/anonymous_pro_bold.ttf", "../res/TannenbergFett.ttf"};
     char text[256] = "workers of the world, unite!";
     int fontSize = 60;
     char userInputBuffer[256];
