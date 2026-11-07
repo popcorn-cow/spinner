@@ -38,14 +38,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install --yes build-essential git pkg-config libasound2-dev libx11-dev libxrandr-dev libxi-dev libgl1-mesa-dev libglu1-mesa-dev libxcursor-dev libxinerama-dev libwayland-dev libxkbcommon-dev
-
-      - name: Build and install Raylib for Linux
-        if: runner.os == 'Linux'
-        run: |
-          git clone --depth 1 --branch 6.2 https://github.com/raysan5/raylib.git /tmp/raylib
-          make -C /tmp/raylib/src PLATFORM=PLATFORM_DESKTOP RAYLIB_LIBTYPE=STATIC
-          sudo install -D -m 644 /tmp/raylib/src/libraylib.a /usr/local/lib/libraylib.a
+          sudo apt-get install --yes build-essential pkg-config libraylib-dev
 
       - name: Install macOS build dependencies
         if: runner.os == 'macOS'
@@ -147,7 +140,7 @@ jobs:
     name: Publish GitHub Release
     if: startsWith(github.ref, 'refs/tags/v')
     needs: build
-    runs-on: ubuntu-26.10
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
     steps:
