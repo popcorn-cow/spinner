@@ -147,11 +147,7 @@ jobs:
     name: Publish GitHub Release
     if: startsWith(github.ref, 'refs/tags/v')
     needs: build
-<<<<<<< HEAD
     runs-on: ubuntu-26.10
-=======
-    runs-on: ubuntu-26.04
->>>>>>> f4bb57aca06779d16d04aeacd5173ccdf330d204
     permissions:
       contents: write
     steps:

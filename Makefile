@@ -16,7 +16,7 @@ MODE_SUFFIX  :=
 endif
 
 # Windows (w64devkit + Raylib, matching the VS Code task).
-CC_WINDOWS      ?= C:/raylib/w64devkit/bin/gcc.exe # change these if you have them in different directories
+CC_WINDOWS      ?= C:/raylib/w64devkit/bin/gcc.exe  # change these if you have them in different directories
 RAYLIB_WINDOWS  ?= C:/raylib/raylib/src
 WINDOWS_CFLAGS  ?= $(CFLAGS)
 WINDOWS_CPPFLAGS?= -I$(RAYLIB_WINDOWS) -I./inc

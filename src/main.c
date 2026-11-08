@@ -31,7 +31,11 @@
 #include "tinyfiledialogs.h"
 
 
+#define MAX_FILEPATH_RECORDED   4096
+#define MAX_FILEPATH_SIZE       2048
 // char const *lFilterPatterns[6] = { "*.png", "*.mp3", "*.wav", "*.ogg", "*.flac", "*.webp" };
+char const *imgFilterPatterns[] = {"*.webp", "*.jpg", "*.png", "*.avif", "*.jxl", "*.gif", "*.jpeg"}; 
+char const *sndFilterPatterns[] = {"*.wav", "*.ogg", "*.mp3", "*.qoa", "*.xm", "*.mod", "*.flac"};
 
 const int width = 800;
 const int height = 450;
@@ -42,6 +46,12 @@ int main(void)
     SetConfigFlags(FLAG_MSAA_4X_HINT | FLAG_WINDOW_HIGHDPI | FLAG_WINDOW_RESIZABLE);
     InitWindow(width, height, "Spinner");
     ChangeDirectory(GetApplicationDirectory());
+    int filePathCounter = 0;
+    char *filePaths[MAX_FILEPATH_RECORDED] = {0};
+    for (int i = 0; i < MAX_FILEPATH_RECORDED; ++i) 
+    {
+        filePaths[i] = (char *)RL_CALLOC(MAX_FILEPATH_RECORDED, 1);
+    }
     GuiLoadStyleDefault();
     InitAudioDevice();
     #if LUA_ENABLED
@@ -67,7 +77,7 @@ int main(void)
     char backgroundPath[256] = "../res/soviet.png";
     char logoPath[256] = "../res/leftysoy-entrance-emblem.png"; // changed it because i don't want to get banned. i will probably still get banned cause it's le bad or something.
     char songPath[256] = "../res/Sidewalks_And_Skeletons_Crawlspace_Witch_House_ncs.mp3";
-    // static char fontpath[] = "../res/tannenbergfett.ttf";
+    char fontPath[] = "../res/TannenbergFett.ttf";
     char fonts[3][256] = {"../res/DotGothic16-Regular.ttf", "../res/anonymous_pro_bold.ttf", "../res/TannenbergFett.ttf"};
     char text[256] = "workers of the world, unite!";
     int fontSize = 60;
@@ -102,6 +112,7 @@ int main(void)
     bool showEditSongPathMenu = false;
     bool showEditFontPathMenu = false;
     int activeButton = 1;
+    int recordAmount = 0;
     float songVolume = 1.0;
     FFMPEG *ffmpeg;
     
@@ -145,8 +156,8 @@ int main(void)
         }
         if ((!showHelpMenu || !showOptionsMenu) && !recording && IsKeyPressed(KEY_R))
         {
-            GuiDisable();
             recording = true;
+            recordAmount++;
             char const *lFilterPatterns[] = {"*.mp4", "*.webm", "*.mkv", "*.mov"}; 
             char *saveVideoFilePath = tinyfd_saveFileDialog("save recorded video", "../res/", 4, lFilterPatterns, 0);
             if (saveVideoFilePath == NULL) {
@@ -164,7 +175,6 @@ int main(void)
             recording = false;
             ffmpeg_end_rendering(ffmpeg, recording);
             ffmpeg = 0;
-            GuiEnable();
         }
 
         // Update loop
@@ -172,7 +182,24 @@ int main(void)
         UpdateMusicStream(song);
         textOrigin.x += GetFrameTime() * 6.0 * textSpeed;
         if (textOrigin.x >= width + 800) textOrigin.x = -800;
+        SetMusicVolume(song, songVolume);
         
+        if (IsFileDropped()) 
+        {
+            FilePathList droppedFiles = LoadDroppedFiles();
+            for (int i = 0, offset = filePathCounter; i < (int)droppedFiles.count; ++i)
+            {
+                if (filePathCounter < (MAX_FILEPATH_RECORDED - 1) && IsFileExtension(filePaths[i], *sndFilterPatterns))
+                {
+                    TextCopy(filePaths[offset + i], droppedFiles.paths[i]);
+                    filePathCounter++;
+                    TraceLog(LOG_INFO, "%d dropped file\072 %s", filePathCounter, filePaths[i]);
+                    song = LoadMusicStream(filePaths[i]);
+                    PlayMusicStream(song);
+                }
+            }
+            UnloadDroppedFiles(droppedFiles);
+        }
         // drawing stuff to the screen
         BeginDrawing();
             ClearBackground(RAYWHITE);
@@ -182,7 +209,8 @@ int main(void)
                 DrawTexturePro(logo, sourceRec, destRec, origin, (float)rotation, WHITE);
                 DrawTextEx(tannenberg, text, textOrigin, fontSize, 2, RAYWHITE);
             }
-            else {
+            else if (recording && recordAmount > 0)
+            {
                 BeginTextureMode(screen);
                     DrawTexture(background, 0, 0, WHITE);
                     DrawTexturePro(logo, sourceRec, destRec, origin, (float)rotation, WHITE);
@@ -191,15 +219,21 @@ int main(void)
                     ffmpeg_send_frame_flipped(ffmpeg, screenImage.data, screenImage.width, screenImage.height);
                 EndTextureMode();    
             }
+            else {
+                ClearBackground(WHITE);
+                DrawText("Recording in progress...", 10, 10, 40, DARKGRAY);
+                DrawText("Press R to stop recording", 10, 70, 20, GRAY);
+                DrawText("Made with Raylib + FFMPEG with Soy", 10, 400, 10, LIGHTGRAY);
+            }
             if (showOptionsMenu) 
             {
-                DrawRectangle(600, 0, 400, height, RAYWHITE);
-                GuiLabel((Rectangle){650, 5, 100, 20}, "Logo");
-                GuiToggle((Rectangle){650, 30, 100, 20}, "open file", &showEditLogoPathMenu);
+                // DrawRectangle(600, 0, 400, height, RAYWHITE);
+                GuiWindowBox((Rectangle){600, 0, 400, height}, "Options");
+                GuiLabel((Rectangle){650, 15, 100, 20}, "Logo");
+                GuiToggle((Rectangle){650, 45, 100, 20}, "open file", &showEditLogoPathMenu);
                 if (showEditLogoPathMenu)
                 {
-                    char const *lFilterPatterns[] = {"*.webp", "*.jpg", "*.png", "*.avif", "*.jxl", "*.gif", "*.jpeg"}; 
-                    char *logoFilePathBuffer = tinyfd_openFileDialog("Choose a logo to spin", "../res/", 7, lFilterPatterns, 0, 0);
+                    char *logoFilePathBuffer = tinyfd_openFileDialog("Choose a logo to spin", "../res/", 7, imgFilterPatterns, 0, 0);
                     // GuiTextInputBox((Rectangle){width / 2 - 250, height /2 - 100, 500, 200}, "Change Logo Texture", "change the logo texture on the screen", userInputBuffer, fontSize, "Set\nCancel", &activeButton, 0);
                     if (logoFilePathBuffer == NULL)
                     {
@@ -216,37 +250,37 @@ int main(void)
                     }
                 }
                 
-                GuiLabel((Rectangle){650, 55, 100, 20}, "Background");
-                GuiToggle((Rectangle){650, 80, 100, 20}, "open file", &showEditBackgroundPathMenu);
+                GuiLabel((Rectangle){650, 70, 100, 20}, "Background");
+                GuiToggle((Rectangle){650, 95, 100, 20}, "open file", &showEditBackgroundPathMenu);
                 if (showEditBackgroundPathMenu)
                 {
-                    char const *lFilterPatterns[] = {"*.webp", "*.jpg", "*.png", "*.avif", "*.jxl", "*.gif", "*.jpeg"}; 
-                    char *backgroundFilePathBuffer = tinyfd_openFileDialog("Choose a background", "../res/", 7, lFilterPatterns, 0, 0);
-                    if (backgroundFilePathBuffer == NULL)
+                    char *backgroundFilePathBuffer = tinyfd_openFileDialog("Choose a background", "../res/", 7, imgFilterPatterns, 0, 0);
+                    if (backgroundFilePathBuffer != NULL)
                     {
-                        TraceLog(LOG_ERROR, "You must select a file.");
-                        tinyfd_messageBox("error", "You must select a file.", "ok", "error", 1);
+                        strncpy(backgroundPath, backgroundFilePathBuffer, sizeof(backgroundPath));
+                        background = LoadTexture(backgroundPath);
                         continue;
                     }
                     else
                     {
-                        strncpy(backgroundPath, backgroundFilePathBuffer, sizeof(backgroundPath));
-                        background = LoadTexture(backgroundPath);
+                        TraceLog(LOG_ERROR, "You must select a file.");
+                        tinyfd_messageBox("error", "You must select a file.", "ok", "error", 1);
                         // memset(backgroundFilePathBuffer, '\0', 256);
                         continue;
                     }
 
                 }
-                GuiLabel((Rectangle){650, 105, 60, 20}, "Music");
-                GuiToggle((Rectangle){650, 130, 100, 20}, "open file", &showEditSongPathMenu);
+                GuiLabel((Rectangle){650, 120, 60, 20}, "Music");
+                GuiToggle((Rectangle){650, 145, 100, 20}, "open file", &showEditSongPathMenu);
                 if (showEditSongPathMenu)
                 {
-                    char const *lFilterPatterns[] = {"*.wav", "*.ogg", "*.mp3", "*.qoa", "*.xm", "*.mod", "*.flac"}; 
-                    char *songFilePathBuffer = tinyfd_openFileDialog("Choose a song to play", "../res/", 7, lFilterPatterns, 0, 0);
+                    char const *sndFilterPatterns[] = {"*.wav", "*.ogg", "*.mp3", "*.qoa", "*.xm", "*.mod", "*.flac"}; 
+                    char *songFilePathBuffer = tinyfd_openFileDialog("Choose a song to play", "../res/", 7, sndFilterPatterns, 0, 0);
                     if (songFilePathBuffer == NULL)
                     {
                         TraceLog(LOG_ERROR, "You must select a file.");
                         tinyfd_messageBox("error", "You must select a file.", "ok", "error", 1);
+                        tinyfd_beep();
                         continue;
                     }
                     else
@@ -259,29 +293,42 @@ int main(void)
                     }
 
                 }
-                GuiToggle((Rectangle){650, 155, 100, 20}, "Loop music", &song.looping);
-                if (GuiValueBoxFloat((Rectangle){650, 180, 100, 20}, "Volume", TextFormat("%f", songVolume), &songVolume, 0))
+                GuiToggle((Rectangle){650, 170, 100, 20}, "Loop music", &song.looping);
+                if (GuiValueBoxFloat((Rectangle){650, 195, 100, 20}, "Volume", TextFormat("%f", songVolume), &songVolume, 1))
                 {
                     SetMusicVolume(song, songVolume);
-                }
-                
+                }               
                 // GuiValueBox(Rectangle bounds, const char *text, int *value, int minValue, int maxValue, bool editMode); // Value Box control, updates input text with numbers
 
                 
-                GuiLabel((Rectangle){650, 205, 60, 20}, "font");
-                GuiToggleSlider((Rectangle){650, 230, 100, 20}, "Tannenberg Fett; Anonymous Code Pro;DotGothic", &activeButton);
+                GuiLabel((Rectangle){650, 220, 60, 20}, "font");
+                // GuiToggleSlider((Rectangle){650, 230, 100, 20}, "Tannenberg Fett; Anonymous Code Pro;DotGothic", &activeButton);
+                GuiToggle((Rectangle){650, 245, 100, 20}, "open file", &showEditFontPathMenu);
                 if (showEditFontPathMenu)
                 {
                     // GuiTextInputBox((Rectangle){width / 2 - 250, height /2 - 100, 500, 200}, "Change font", "change the font currently displayed", fontPath, fontSize, "Set\nCancel", &activeButton, 0);
-                    
+                    char const *fontFilterPatterns[] = {"*.ttf", "*.otf", "*.fnt"}; 
+                    char *fontFilePathBuffer = tinyfd_openFileDialog("Choose a font to display", "../res/", 7, fontFilterPatterns, 0, 0);
+                    if (fontFilePathBuffer == NULL)
+                    {
+                        TraceLog(LOG_ERROR, "You must select a file.");
+                        tinyfd_messageBox("error", "You must select a file.", "ok", "error", 1);
+                        continue;
+                    }
+                    else
+                    {
+                        strncpy(fontPath, fontFilePathBuffer, sizeof(fontPath));
+                        LoadFontEx(fontPath, fontSize, NULL, 0);
+                        continue;
+                    }
                 }
-                GuiToggle((Rectangle){650, 255, 100, 20}, "Change Text", &showEditTextMenu);
+                GuiToggle((Rectangle){650, 270, 100, 20}, "Change Text", &showEditTextMenu);
                 if (showEditTextMenu)
                 {
                     // GuiMessageBox((Rectangle){width / 2 - 250, height /2 - 100, 500, 200}, "Message Box", "This is a GuiMessageBox!", "Set\nCancel", currentActiveButton);
                     GuiTextInputBox((Rectangle){width / 2 - 250, height /2 - 100, 500, 200}, "Change text", "change the scrolling text on the screen", text, fontSize, "Set\nCancel", &activeButton, 0);
                 }
-                GuiSpinner((Rectangle){650, 280, 100, 20}, "Font size", &fontSize, 0, 100, true);
+                GuiSpinner((Rectangle){650, 295, 100, 20}, "Font size", &fontSize, 0, 100, true);
             }
             else if (showHelpMenu)
             {
@@ -292,6 +339,10 @@ int main(void)
     }
 
     // deinit
+    for (int i = 0; i < MAX_FILEPATH_RECORDED; ++i)
+    {
+        RL_FREE(filePaths[i]);
+    }
     UnloadTexture(logo);        // Texture unloading
     UnloadRenderTexture(screen);
     UnloadImage(screenImage);
