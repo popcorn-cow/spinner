@@ -1,6 +1,10 @@
-#if defined(__linux__) || defined(__MACH__) || defined (__APPLE__)
+#if defined(__linux__) || defined(__MACH__) || defined(__APPLE__)
+#ifndef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L
+#endif
+#if defined(__linux__) && !defined(_GNU_SOURCE)
 #define _GNU_SOURCE
-#define _POSIX_C_SOURCE
+#endif
 #include <assert.h>
 #include <stdio.h>
 #include <stdint.h>

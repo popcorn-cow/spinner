@@ -38,7 +38,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install --yes build-essential git libasound2-dev libx11-dev libxrandr-dev libxi-dev libgl1-mesa-dev libglu1-mesa-dev libxcursor-dev libxinerama-dev libwayland-dev libxkbcommon-dev
+          sudo apt-get install --yes build-essential git libasound2-dev libx11-dev libxrandr-dev libxi-dev libgl1-mesa-dev libglu1-mesa-dev libxcursor-dev libxinerama-dev libwayland-dev libxkbcommon-dev libraylib600 libraylib-dev
 
       - name: Build and install Raylib for Linux
         if: runner.os == 'Linux'
@@ -147,11 +147,7 @@ jobs:
     name: Publish GitHub Release
     if: startsWith(github.ref, 'refs/tags/v')
     needs: build
-<<<<<<< HEAD
     runs-on: ubuntu-26.10
-=======
-    runs-on: ubuntu-26.04
->>>>>>> f4bb57aca06779d16d04aeacd5173ccdf330d204
     permissions:
       contents: write
     steps:
